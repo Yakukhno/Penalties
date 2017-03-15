@@ -1,21 +1,20 @@
 public class Game {
-    private boolean[] team1 = new boolean[100];
-    private boolean[] team2 = new boolean[100];
-    private int currentKickTeam1;
-    private int currentKickTeam2;
-    private int currentKick;
+    private static final int USUALLY_ATTEMPTS = 5;
+    private static final int SERIES_TO_SHOW_COST = 7;
 
-    private int costOfLosersTeam1;
-    private int costOfLosersTeam2;
+    private Team team1 = new Team("Team1");
+    private Team team2 = new Team("Team2");
+    private int currentShot;
 
-    public void kick(int team, boolean isScored) {
-        if ((currentKick < 5) || (getTeamScore(team1) == getTeamScore(team2))
+    public void shot(int team, boolean isGoal) {
+        if ((currentShot < USUALLY_ATTEMPTS)
+                || (team1.getGoals(currentShot) == team2.getGoals(currentShot))
                 && !(isEarlyFinishTeam1() || isEarlyFinishTeam2())) {
             if (team == 0) {
-                team1[currentKickTeam1++] = isScored;
+                team1.shot(isGoal);
             } else if (team == 1) {
-                team2[currentKickTeam2++] = isScored;
-                currentKick++;
+                team2.shot(isGoal);
+                currentShot++;
             }
         } else {
             throw new IllegalStateException("Game is finished!");
@@ -23,57 +22,48 @@ public class Game {
     }
 
     private boolean isEarlyFinishTeam2() {
-        return (currentKickTeam1 < 5) && (getTeamScore(team2) - getTeamScore(team1)) > (5 - currentKickTeam1);
+        return (team1.getCurrentShot() < USUALLY_ATTEMPTS)
+                && ((team2.getGoals() - team1.getGoals())
+                        > (USUALLY_ATTEMPTS - team1.getCurrentShot()));
     }
 
     private boolean isEarlyFinishTeam1() {
-        return (currentKickTeam1 < 5) && (getTeamScore(team1) - getTeamScore(team2)) > (5 - currentKickTeam2);
+        return (team2.getCurrentShot() < USUALLY_ATTEMPTS)
+                && ((team1.getGoals() - team2.getGoals())
+                        > (USUALLY_ATTEMPTS - team2.getCurrentShot()));
     }
 
     public String score() {
-        if (currentKick < 7) {
-            return getTeamScore(team1) + ":" + getTeamScore(team2);
+        if (currentShot < SERIES_TO_SHOW_COST) {
+            return team1.getGoals() + ":" + team2.getGoals();
         } else {
-            return getTeamScore(team1) + "[" + costOfLosersTeam1 + "]"
+            return team1.getGoals() + "[" + team1.getLosersCost() + "]"
                     + ":"
-                    + "[" + costOfLosersTeam2 + "]" + getTeamScore(team2);
+                    + "[" + team2.getLosersCost() + "]" + team2.getGoals();
         }
     }
-
-    private int getTeamScore(boolean[] team) {
-        int score = 0;
-        for (int i = 0; i < currentKick; i++) {
-            if (team[i]) {
-                score++;
-            }
-        }
-        return score;
-    }
-
 
     public String getWinner() {
         String winner = "Not finished";
-        if (currentKick >= 5
+        if (currentShot >= USUALLY_ATTEMPTS
                 || isEarlyFinishTeam1()
                 || isEarlyFinishTeam2()) {
-            int score1 = getTeamScore(team1);
-            int score2 = getTeamScore(team2);
-            if (score1 > score2) {
-                winner = "Team1";
-            } else if (score1 < score2) {
-                winner = "Team2";
+            if (team1.getGoals() > team2.getGoals()) {
+                winner = team1.getName();
+            } else if (team1.getGoals() < team2.getGoals()) {
+                winner = team2.getName();
             }
         }
         return winner;
     }
 
-    public boolean[] kick(String player, int team, boolean isScored) {
-        kick(team, isScored);
+    public boolean[] shot(String player, int team, boolean isScored) {
+        shot(team, isScored);
         if (!isScored) {
             if (team == 0) {
-                costOfLosersTeam1 += getPlayerCost(player);
+                team1.addLoserCost(getPlayerCost(player));
             } else if (team == 1) {
-                costOfLosersTeam2 += getPlayerCost(player);
+                team2.addLoserCost(getPlayerCost(player));
             }
         }
         return getPlayerHistory(player);
