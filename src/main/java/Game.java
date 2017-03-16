@@ -1,36 +1,47 @@
 public class Game {
-    private static final int USUALLY_ATTEMPTS = 5;
+    private static final int BASIC_ATTEMPTS = 5;
     private static final int SERIES_TO_SHOW_COST = 7;
+    private static final String GAME_IS_FINISHED = "Game is finished!";
+    private static final String GAME_IS_NOT_FINISHED = "Game is not finished!";
 
-    private Team team1 = new Team("Team1");
-    private Team team2 = new Team("Team2");
+    private Team team1;
+    private Team team2;
     private int currentShot;
 
-    public void shot(int team, boolean isGoal) {
-        if ((currentShot < USUALLY_ATTEMPTS)
-                || (team1.getGoals(currentShot) == team2.getGoals(currentShot))
-                && !(isEarlyFinishTeam1() || isEarlyFinishTeam2())) {
-            if (team == 0) {
-                team1.shot(isGoal);
-            } else if (team == 1) {
-                team2.shot(isGoal);
+    public Game(Team team1, Team team2) {
+        this.team1 = team1;
+        this.team2 = team2;
+    }
+
+    public void shot(Team team, boolean isGoal) {
+        if ((currentShot < BASIC_ATTEMPTS) || isEqualGoals() && !isEarlyFinish()) {
+            team.shot(isGoal);
+            if (team == team2) {
                 currentShot++;
             }
         } else {
-            throw new IllegalStateException("Game is finished!");
+            throw new IllegalStateException(GAME_IS_FINISHED);
         }
     }
 
-    private boolean isEarlyFinishTeam2() {
-        return (team1.getCurrentShot() < USUALLY_ATTEMPTS)
-                && ((team2.getGoals() - team1.getGoals())
-                        > (USUALLY_ATTEMPTS - team1.getCurrentShot()));
+    private boolean isEarlyFinish() {
+        return isEarlyFinishTeam1() || isEarlyFinishTeam2();
+    }
+
+    private boolean isEqualGoals() {
+        return team1.getGoals(currentShot) == team2.getGoals(currentShot);
     }
 
     private boolean isEarlyFinishTeam1() {
-        return (team2.getCurrentShot() < USUALLY_ATTEMPTS)
+        return (team2.getCurrentShot() < BASIC_ATTEMPTS)
                 && ((team1.getGoals() - team2.getGoals())
-                        > (USUALLY_ATTEMPTS - team2.getCurrentShot()));
+                        > (BASIC_ATTEMPTS - team2.getCurrentShot()));
+    }
+
+    private boolean isEarlyFinishTeam2() {
+        return (team1.getCurrentShot() < BASIC_ATTEMPTS)
+                && ((team2.getGoals() - team1.getGoals())
+                        > (BASIC_ATTEMPTS - team1.getCurrentShot()));
     }
 
     public String score() {
@@ -44,10 +55,8 @@ public class Game {
     }
 
     public String getWinner() {
-        String winner = "Not finished";
-        if (currentShot >= USUALLY_ATTEMPTS
-                || isEarlyFinishTeam1()
-                || isEarlyFinishTeam2()) {
+        String winner = GAME_IS_NOT_FINISHED;
+        if (currentShot >= BASIC_ATTEMPTS || isEarlyFinish()) {
             if (team1.getGoals() > team2.getGoals()) {
                 winner = team1.getName();
             } else if (team1.getGoals() < team2.getGoals()) {
@@ -57,14 +66,10 @@ public class Game {
         return winner;
     }
 
-    public boolean[] shot(String player, int team, boolean isScored) {
+    public boolean[] shot(String player, Team team, boolean isScored) {
         shot(team, isScored);
         if (!isScored) {
-            if (team == 0) {
-                team1.addLoserCost(getPlayerCost(player));
-            } else if (team == 1) {
-                team2.addLoserCost(getPlayerCost(player));
-            }
+            team.addLoserCost(getPlayerCost(player));
         }
         return getPlayerHistory(player);
     }
